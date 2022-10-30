@@ -1,0 +1,46 @@
+#ifndef ZW800_H
+#define ZW800_H
+
+#include "esp_types.h"
+#include "esp_event.h"
+#include "esp_err.h"
+#include "driver/uart.h"
+
+#define CONFIG_ZW800_UART_RXD 6
+#define CONFIG_ZW800_UART_TXD 5
+#define CONFIG_ZW800_TOUCH 2
+
+#define ZW800_CONFIG_DEFAULT()                              \
+    {                                                       \
+        .uart = {                                           \
+            .uart_port = UART_NUM_1,                        \
+            .rx_pin = CONFIG_ZW800_UART_RXD,                \
+            .tx_pin = CONFIG_ZW800_UART_TXD,                \
+            .baud_rate = 57600,                             \
+            .data_bits = UART_DATA_8_BITS,                  \
+            .parity = UART_PARITY_DISABLE,                  \
+            .stop_bits = UART_STOP_BITS_1,                  \
+        },                                                  \
+        .touch_pin = CONFIG_ZW800_TOUCH,                    \
+    }
+
+typedef struct {
+    int touch_pin;
+    struct {
+        uart_port_t uart_port;        /*!< UART port number */
+        int rx_pin;                  /*!< UART Rx Pin number */
+        int tx_pin;
+        uint32_t baud_rate;           /*!< UART baud rate */
+        uart_word_length_t data_bits; /*!< UART data bits length */
+        uart_parity_t parity;         /*!< UART parity */
+        uart_stop_bits_t stop_bits;   /*!< UART stop bits length */
+    } uart;                           /*!< UART specific configuration */
+} zw800_config_t;
+
+esp_err_t zw800_init(const zw800_config_t *config);
+
+esp_err_t zw800_add_finger(uint8_t id);
+
+esp_err_t zw800_clear_all_finger();
+
+#endif
