@@ -369,7 +369,7 @@ static void zw800_task_entry(void *arg) {
 
                 gpio_num_t clicked_gpio;
                 if (xQueueReceive(event_queue, &clicked_gpio, portMAX_DELAY)) {
-                    gpio_isr_handler_remove(zw800_dev->touch_pin);
+                    gpio_intr_disable(zw800_dev->touch_pin);
                 } else {
                     // timeout
                 }
@@ -400,8 +400,10 @@ static void zw800_task_entry(void *arg) {
             //ESP_LOGI(TAG, "TOUCH PIN %d", gpio_get_level(zw800_dev->touch_pin));
             vTaskDelay(pdMS_TO_TICKS(200));
         } while (gpio_get_level(zw800_dev->touch_pin)); // wait finger remove
-        gpio_isr_handler_add(zw800_dev->touch_pin, gpio_isr_handler, (void *) zw800_dev->touch_pin);
+        gpio_intr_enable(zw800_dev->touch_pin);
     }
+
+    gpio_isr_handler_remove(zw800_dev->touch_pin);
     vTaskDelete(NULL);
 }
 
@@ -494,7 +496,7 @@ esp_err_t zw800_add_finger(uint8_t id) {
         return ESP_FAIL;
     }
 
-    gpio_isr_handler_remove(zw800.touch_pin);
+    gpio_intr_disable(zw800.touch_pin);
 
     // check template num
     if (id == 0) {
@@ -515,7 +517,7 @@ esp_err_t zw800_add_finger(uint8_t id) {
     zw800_write_cmd(&zw800, ZW800_CMD_SLEEP);
     response = zw800_read_response(&zw800);
 
-    gpio_isr_handler_add(zw800.touch_pin, gpio_isr_handler, (void *) zw800.touch_pin);
+    gpio_intr_enable(zw800.touch_pin);
 
     return ESP_OK;
 }

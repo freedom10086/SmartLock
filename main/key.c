@@ -77,6 +77,7 @@ static void key_task_entry(void *arg) {
         if (xQueueReceive(event_queue, &clicked_gpio, portMAX_DELAY)) {
             // vTaskDelay(pdMS_TO_TICKS(2));
             uint8_t index = KEY_1_NUM == clicked_gpio ? 0 : 1;
+            gpio_intr_disable(clicked_gpio);
 
             if (gpio_get_level(clicked_gpio) == 0) {
                 // key down
@@ -125,6 +126,7 @@ static void key_task_entry(void *arg) {
             }
 
             tick_count[index] = xTaskGetTickCount();
+            gpio_intr_enable(clicked_gpio);
         }
     }
 
