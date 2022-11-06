@@ -1,3 +1,4 @@
+#include <esp_sleep.h>
 #include "freertos/FreeRTOS.h"
 #include "freertos/task.h"
 #include "esp_log.h"
@@ -25,6 +26,11 @@ key_click_event_handler(void *event_handler_arg, esp_event_base_t event_base, in
 }
 
 void app_main(void) {
+    esp_sleep_wakeup_cause_t cause = esp_sleep_get_wakeup_cause();
+    if (cause != ESP_SLEEP_WAKEUP_UNDEFINED) {
+        ESP_LOGI(TAG, "wake up by cause  %d", cause);
+    }
+
     // Create the event loops
     ESP_ERROR_CHECK(esp_event_loop_create_default());
     // key click event

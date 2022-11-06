@@ -75,6 +75,8 @@ zw800_cmd_t ZW800_CMD_PS_ValidTempleteNum = {{0x1D,}, 1};
 zw800_cmd_t ZW800_CMD_PS_AutoEnroll = {{0x31, '\0', '\0', 0x04, '\0', '\0'}, 6};
 // 自动验证 分数等级(2) 1-5 默认3 id号(2) 0xFFFF 全搜索 参数(2)
 zw800_cmd_t ZW800_CMD_PS_AutoIdentify = {{0x32, 0x03, 0xff, 0xff, '\0', '\0'}, 6};
+// 取消自动注册和自动验证
+zw800_cmd_t ZW800_CMD_PS_CANCEL = {{0x30}, 1};
 // LED 功能码(1) 起始颜色(1) 结束颜色(1) 循环次数(1)
 // bit0 是蓝灯控制位；bit1 是绿灯控制位；bit2是红灯控制位
 zw800_cmd_t ZW800_CMD_PS_CONTROL_LED = {{0x3C, 0x01, 0x07, 0x07, 0x00}, 5};
@@ -321,6 +323,16 @@ int auto_enroll(zw800_t *zw800_dev, uint16_t page_id) {
     }
 }
 
+int cancel(zw800_t *zw800_dev) {
+    zw800_write_cmd(zw800_dev, ZW800_CMD_PS_CANCEL);
+    uint8_t response = zw800_read_response(zw800_dev);
+    if (0x00 == response) {
+    } else {
+        ESP_LOGW(TAG, "cancel failed with response %d", response);
+    }
+    return response;
+}
+
 int control_led(zw800_t *zw800_dev, bool r, bool g, bool b, uint8_t repeat) {
     int response;
     //1-普通呼吸灯，2-闪烁灯，3-常开灯，4-常闭灯，5-渐开灯，6-渐闭灯
@@ -351,6 +363,10 @@ int check_status_ok(zw800_t *zw800_dev) {
     int retry_time = 0;
     while (response != 0x00 && retry_time < 7) {
         ESP_LOGW(TAG, "hand shake with zw800 failed, response code: %x", response);
+        if (retry_time == 0 || retry_time == 3) {
+            // may in auto process cancel it
+            cancel(zw800_dev);
+        }
         vTaskDelay(pdMS_TO_TICKS(50));
         retry_time++;
     }
@@ -394,6 +410,7 @@ static void zw800_task_entry(void *arg) {
             response = zw800_read_response(zw800_dev);
             if (response != 0x00) {
                 ESP_LOGE(TAG, "enter sleep mode failed %X", response);
+                check_status_ok(zw800_dev);
             } else {
                 ESP_LOGI(TAG, "zw800 enter sleep mode");
             }
